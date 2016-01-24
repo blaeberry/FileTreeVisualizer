@@ -38,7 +38,7 @@ public class DirectoryView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(TEXT_SIZE);
         textPaint.setStyle(Paint.Style.FILL);
-        text = "HELLO THIS IS A SUPER LONG MESSAGE I WONDER HOW FAR YOU WILL GET IN IT";
+        text = "default_text";
         viewBounds = new Rect();
     }
 
