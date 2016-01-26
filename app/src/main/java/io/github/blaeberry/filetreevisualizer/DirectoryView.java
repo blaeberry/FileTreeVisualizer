@@ -20,29 +20,27 @@ import android.view.View;import java.lang.Override;import java.lang.String;impor
 public class DirectoryView extends View {
 
     private ShapeDrawable drawable;
-    public static float TEXT_SIZE = 40, MAX_SIZE = 300;
+    public static final float TEXT_SIZE = 40, MAX_SIZE = 300;
     private float proportion;
     private int row, size;
     private Rect viewBounds;
     private Paint textPaint;
     public static final String CVIEW_TAG = "cview";
     private String text;
+    private DirectoryNode wrapperNode;
 
     public DirectoryView(Context context) {
         super(context);
-        row = 1;
-        setProportion(1.f);
-        drawable = new ShapeDrawable(new OvalShape());
-        textPaint = new Paint();
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(TEXT_SIZE);
-        textPaint.setStyle(Paint.Style.FILL);
-        text = "default_text";
-        viewBounds = new Rect();
+        initializeView();
     }
 
-    //potential bugs for 2 reasons (1) if not attached to layout (2) if not called before viewBounds
+    public DirectoryView(Context context, DirectoryNode wrapperNode) {
+        super(context);
+        initializeView();
+        this.wrapperNode = wrapperNode;
+    }
+
+    //TODO potential bugs for 2 reasons (1) if not attached to layout (2) if not called before viewBounds
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -69,6 +67,19 @@ public class DirectoryView extends View {
                 + "| size/2: " + (size / 2));
         String displayedText = calculateDisplayedText(text, textPaint);
         canvas.drawText(displayedText, size / 2, size / 2, textPaint);
+    }
+
+    private void initializeView() {
+        row = 1;
+        setProportion(1.f);
+        drawable = new ShapeDrawable(new OvalShape());
+        textPaint = new Paint();
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(TEXT_SIZE);
+        textPaint.setStyle(Paint.Style.FILL);
+        text = "default_text";
+        viewBounds = new Rect();
     }
 
     private void determineBounds() {
@@ -137,6 +148,14 @@ public class DirectoryView extends View {
         invalidate();
     }
 
+    public DirectoryNode getWrapperNode() {
+        return wrapperNode;
+    }
+
+    public void setWrapperNode(DirectoryNode wrapperNode) {
+        this.wrapperNode = wrapperNode;
+    }
+
     public float getProportion() {
         return proportion;
     }
@@ -151,5 +170,11 @@ public class DirectoryView extends View {
 
     public Rect getViewBounds() {
         return viewBounds;
+    }
+
+    public DirectoryNode getWrapperNode(DirectoryNode wrapperNode) {
+        if(wrapperNode == null)
+            Log.d(MainActivity.MAIN_TAG, "Wrapper node is null!");
+        return wrapperNode;
     }
 }

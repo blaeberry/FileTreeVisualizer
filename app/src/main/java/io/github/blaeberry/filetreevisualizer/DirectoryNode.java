@@ -12,6 +12,7 @@ public class DirectoryNode {
     private DirectoryNode parent;
     private DirectoryView contents;
     private List<DirectoryNode> children;
+    private long totalStorage;
 
     public DirectoryNode(DirectoryNode parent, DirectoryView contents, List<DirectoryNode> children) {
         this.parent = parent;
@@ -51,6 +52,10 @@ public class DirectoryNode {
         this.children = children;
     }
 
+    public void setTotalStorage(long totalStorage) {
+        this.totalStorage = totalStorage;
+    }
+
     public DirectoryNode getParent() {
         return parent;
     }
@@ -65,5 +70,13 @@ public class DirectoryNode {
 
     public DirectoryNode getChildAt(int i) {
         return children.get(i);
+    }
+
+    public List<DirectoryNode> getChildren() {
+        return children;
+    }
+
+    public long getTotalStorage() {
+        return totalStorage;
     }
 }

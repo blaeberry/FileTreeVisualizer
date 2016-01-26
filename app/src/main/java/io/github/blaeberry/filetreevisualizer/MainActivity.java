@@ -1,12 +1,18 @@
 package io.github.blaeberry.filetreevisualizer;
 
+import android.Manifest;
 import android.app.FragmentTransaction;
+import android.content.Context;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileOutputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,6 +22,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //fillFiles();
 
         if (getFragmentManager().findFragmentById(R.id.fragment_container) == null) {
             getFragmentManager().beginTransaction().add
@@ -33,7 +41,31 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if(getFragmentManager().getBackStackEntryCount() != 0) getFragmentManager().popBackStack();
+        if (getFragmentManager().getBackStackEntryCount() != 0) getFragmentManager().popBackStack();
         else super.onBackPressed();
+    }
+
+    public void fillFiles() {
+        Log.e(MAIN_TAG, "ONLY FILL THIS ONCE YOU BASTARD!");
+
+        String FILENAME = "hello_file";
+        String string = "hello world!";
+        String parentDirectory = getFilesDir().getPath();
+        try {
+            File subDir1 = new File(parentDirectory, "SubDir");
+            subDir1.mkdirs();
+            (new File(subDir1, "child1")).mkdirs();
+            (new File(subDir1, "child2")).mkdirs();
+            (new File(subDir1, "child3")).mkdirs();
+
+            (new File(parentDirectory, "SubDir2")).mkdirs();
+
+//            FileOutputStream fos = openFileOutput("text_file", Context.MODE_PRIVATE);
+//            fos.write(string.getBytes());
+//            fos.close();
+
+        } catch (Exception e) {
+            Log.e(MAIN_TAG, "Failed to write files.");
+        }
     }
 }
