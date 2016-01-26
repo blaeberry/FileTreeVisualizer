@@ -1,12 +1,12 @@
 package io.github.blaeberry.filetreevisualizer;
 
-import android.app.Fragment;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.RelativeLayout;
 
 import java.io.File;
@@ -18,13 +18,13 @@ import java.util.Queue;
 /**
  * Created by Evan on 1/22/2016.
  */
-public class GenerateTreeFragment extends Fragment {
+public class GenerateTreeFragment extends ScrollFragment {
     public static final String PATH_KEY = "original_path", ODD_SIBLINGS = "odd",
             EVEN_SIBLINGS_LEFT = "evenL", EVEN_SIBLINGS_RIGHT = "evenR";
     private String rootPath = "TEST NO PASS";
     private RelativeLayout layout;
     private int idNum = 3001;
-    private final int MARGIN_SIZE = 30;
+    private final int MARGIN_SIZE = 30, CURVE_SIZE = 50, LINE_LENGTH = 100;
 
     public static GenerateTreeFragment newInstance(String path) {
         //Log.d(MainActivity.MAIN_TAG, "PAth: " + path);
@@ -47,23 +47,31 @@ public class GenerateTreeFragment extends Fragment {
     public View onCreateView
             (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         layout = (RelativeLayout) inflater.inflate(R.layout.generate_tree, container, false);
-        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(3000,3000);
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(3000, 3000);
         layout.setLayoutParams(lp);
+
+        layout.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        //TODO these might cause some sort of problem on config change
+                        layout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        GenerateTreeFragment.this.setupScroll(layout);
+                        Log.wtf(MainActivity.MAIN_TAG, "width: " + layout.getWidth()
+                                + "|height:  " + layout.getHeight());
+                        new PerformTreeGeneration().execute(rootPath);
+
+                    }
+                });
+
         return layout;
     }
 
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        //TODO find better spot for this for configuration changes
-        new PerformTreeGeneration().execute(rootPath);
-    }
 
     private class PerformTreeGeneration extends
             AsyncTask<String, PerformTreeGeneration.DirectoryContainer, Void> {
 
-        private boolean viewAdded = true;
-
+        private boolean addingView = false;
         FileNodeContainer GodFileNodeContainer;
 
         @Override
@@ -77,7 +85,7 @@ public class GenerateTreeFragment extends Fragment {
             float proportion;
             String path = params[0];
             GodFileNodeContainer = new FileNodeContainer
-                    (new File(path), new DirectoryNode(null, null), 1);
+                    (new File(path), new DirectoryNode(null, null), 0);
             FileNodeContainer currentFileNodeContainer = GodFileNodeContainer;
             Queue<FileNodeContainer> directories = new LinkedList<>();
             File currentFile;
@@ -105,7 +113,7 @@ public class GenerateTreeFragment extends Fragment {
                 DirectoryNode childNode;
                 if (childFiles != null) {
                     for (File childFile : childFiles) {
-                        Log.d(MainActivity.MAIN_TAG, "child file: " + childFile.getName());
+                        Log.d(MainActivity.MAIN_TAG, '\t' + "child file: " + childFile.getName());
                         childNode = new DirectoryNode(currentNode, null);
                         currentNode.addChild(childNode);
                         directories.add(new FileNodeContainer(childFile, childNode,
@@ -113,31 +121,34 @@ public class GenerateTreeFragment extends Fragment {
                     }
                 }
                 String text = currentFile.getName();
+                Log.d(MainActivity.MAIN_TAG, text + " is now waiting for previous view to be added");
                 //TODO probably custom thread with synchronization (or redo algo so it can be async)
-                while (!viewAdded) {
+                while (addingView) {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
                         Log.e(MainActivity.MAIN_TAG, "Background Thread interrupted!");
                     }
                 }
+                Log.d(MainActivity.MAIN_TAG, "Going to make view from: " + text);
                 publishProgress(new DirectoryContainer(currentNode, currentRow, text, 1.f));
-                viewAdded = false;
             }
 //                }
             return null;
         }
 
-        //needs to refresh all children views (later needs to move parent on collision)
+        //TODO move all views on collision
         @Override
         protected void onProgressUpdate(DirectoryContainer... containers) {
+            addingView = true;
+
             DirectoryView dv = new DirectoryView(getActivity());
             dv.setText(containers[0].text);
+            dv.setRow(containers[0].row);
             dv.setId(idNum++);
 
             DirectoryNode newNode = containers[0].node;
             newNode.setContents(dv);
-            int row = containers[0].row;
 
             List<DirectoryNode> siblings = new ArrayList<>();
             List<DirectoryNode> displayedSiblings = new ArrayList<>();
@@ -146,7 +157,7 @@ public class GenerateTreeFragment extends Fragment {
             //TODO very inefficient, should make so that I have a map of all displayed nodes
             Boolean godNode = newNode.getParent() == null;
             if (godNode)
-                Log.d(MainActivity.MAIN_TAG, "found GodNode!");
+                Log.d(MainActivity.MAIN_TAG, "View to make is GodNode");
             if (!godNode)
                 siblings = newNode.getParent().getChildren();
             for (DirectoryNode sibling : siblings) {
@@ -166,7 +177,7 @@ public class GenerateTreeFragment extends Fragment {
                 lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
                 lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
                 newNode.getContents().setLayoutParams(lp);
-                Log.d(MainActivity.MAIN_TAG, "Adding godNode to Layout!");
+                Log.d(MainActivity.MAIN_TAG, "Adding godNode to Layout.");
                 layout.addView(newNode.getContents());
             } else {
                 int numDisplayedSiblings = displayedSiblings.size();
@@ -174,11 +185,8 @@ public class GenerateTreeFragment extends Fragment {
 
                 if (numDisplayedSiblings == 1) {
                     nodeToArrange = displayedSiblings.remove(0);
-                    lp.addRule(RelativeLayout.BELOW,
-                            nodeToArrange.getParent().getContents().getId());
-                    lp.addRule(RelativeLayout.ALIGN_LEFT,
-                            nodeToArrange.getParent().getContents().getId());
-                    nodeToArrange.getContents().setLayoutParams(lp);
+                    nodeToArrange.getContents().setLayoutParams
+                            (calcAnchorParams(ODD_SIBLINGS, nodeToArrange));
                     Log.d(MainActivity.MAIN_TAG, "Adding single: " + containers[0].text);
                     layout.addView(nodeToArrange.getContents());
 
@@ -186,149 +194,116 @@ public class GenerateTreeFragment extends Fragment {
                     LinkedList<DirectoryNode> displayOrder = new LinkedList<>();
                     int middlePos = numDisplayedSiblings / 2;
                     nodeToArrange = displayedSiblings.remove(middlePos);
-                    lp.addRule(RelativeLayout.BELOW,
-                            nodeToArrange.getParent().getContents().getId());
-                    lp.addRule(RelativeLayout.ALIGN_LEFT,
-                            nodeToArrange.getParent().getContents().getId());
-                    nodeToArrange.getContents().setLayoutParams(lp);
+                    nodeToArrange.getContents().setLayoutParams
+                            (calcAnchorParams(ODD_SIBLINGS, nodeToArrange));
                     displayOrder.add(nodeToArrange);
 
-                    //Set params of all nodes left of anchoring node and keep sibling order
-                    for (int i = middlePos - 1; i >= 0; i--) {
-                        nodeToArrange = displayedSiblings.remove(i);
-                        int rightNeighborId = displayOrder.getFirst().getContents().getId();
-                        displayOrder.addFirst(nodeToArrange);
+                    addLeftSiblings(middlePos - 1, displayOrder, displayedSiblings);
 
-                        lp = new RelativeLayout.LayoutParams
-                                (RelativeLayout.LayoutParams.WRAP_CONTENT,
-                                        RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        lp.addRule(RelativeLayout.ALIGN_TOP, rightNeighborId);
-                        lp.addRule(RelativeLayout.LEFT_OF, rightNeighborId);
-                        nodeToArrange.getContents().setLayoutParams(lp);
-                    }
-
-                    //Same as above for all nodes to the right of anchoring node
-                    while (!displayedSiblings.isEmpty()) {
-                        nodeToArrange = displayedSiblings.remove(0);
-                        int leftNeighborId = displayOrder.getLast().getContents().getId();
-                        displayOrder.addLast(nodeToArrange);
-
-                        lp = new RelativeLayout.LayoutParams
-                                (RelativeLayout.LayoutParams.WRAP_CONTENT,
-                                        RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        lp.addRule(RelativeLayout.ALIGN_TOP, leftNeighborId);
-                        lp.addRule(RelativeLayout.RIGHT_OF, leftNeighborId);
-                        nodeToArrange.getContents().setLayoutParams(lp);
-                    }
-
+                    addRightSiblings(displayOrder, displayedSiblings);
 
                     //Display all siblings in correct order
                     while (!displayOrder.isEmpty()) {
                         layout.removeView(displayOrder.getFirst().getContents());
                         layout.addView(displayOrder.removeFirst().getContents());
                     }
+                    Log.d(MainActivity.MAIN_TAG, "Added list of odd# siblings");
 
                 } else {
                     //number of sibling views (including self) is even, a little more tricky
                     LinkedList<DirectoryNode> displayOrder = new LinkedList<>();
                     int middleLeftPos = (numDisplayedSiblings / 2) - 1;
                     nodeToArrange = displayedSiblings.remove(middleLeftPos);
-                    lp.addRule(RelativeLayout.BELOW,
-                            nodeToArrange.getParent().getContents().getId());
-                    lp.addRule(RelativeLayout.ALIGN_RIGHT,
-                            nodeToArrange.getParent().getContents().getId());
-                    lp.setMargins(0, 0, (int) ((MARGIN_SIZE + DirectoryView.MAX_SIZE) / 2), 0);
-                    nodeToArrange.getContents().setLayoutParams(lp);
+                    nodeToArrange.getContents().setLayoutParams(
+                            calcAnchorParams(EVEN_SIBLINGS_LEFT, nodeToArrange));
                     displayOrder.add(nodeToArrange);
 
-                    //TODO make some of these into functions, a lot of copy-paste
+                    addLeftSiblings(middleLeftPos - 1, displayOrder, displayedSiblings);
 
-                    for (int i = middleLeftPos - 1; i >= 0; i--) {
-                        nodeToArrange = displayedSiblings.remove(i);
-                        int rightNeighborId = displayOrder.getFirst().getContents().getId();
-                        displayOrder.addFirst(nodeToArrange);
-
-                        lp = new RelativeLayout.LayoutParams
-                                (RelativeLayout.LayoutParams.WRAP_CONTENT,
-                                        RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        lp.addRule(RelativeLayout.ALIGN_TOP, rightNeighborId);
-                        lp.addRule(RelativeLayout.LEFT_OF, rightNeighborId);
-                        nodeToArrange.getContents().setLayoutParams(lp);
-                    }
-
-                    int middleRightPos = (numDisplayedSiblings / 2);
                     nodeToArrange = displayedSiblings.remove(0);
-                    lp.addRule(RelativeLayout.BELOW,
-                            nodeToArrange.getParent().getContents().getId());
-                    lp.addRule(RelativeLayout.ALIGN_LEFT,
-                            nodeToArrange.getParent().getContents().getId());
-                    lp.setMargins((int) ((MARGIN_SIZE + DirectoryView.MAX_SIZE) / 2), 0, 0, 0);
-                    nodeToArrange.getContents().setLayoutParams(lp);
+                    nodeToArrange.getContents().setLayoutParams(
+                            calcAnchorParams(EVEN_SIBLINGS_RIGHT, nodeToArrange));
                     displayOrder.addLast(nodeToArrange);
 
-                    while (!displayedSiblings.isEmpty()) {
-                        nodeToArrange = displayedSiblings.remove(0);
-                        int leftNeighborId = displayOrder.getLast().getContents().getId();
-                        displayOrder.addLast(nodeToArrange);
-
-                        lp = new RelativeLayout.LayoutParams
-                                (RelativeLayout.LayoutParams.WRAP_CONTENT,
-                                        RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        lp.addRule(RelativeLayout.ALIGN_TOP, leftNeighborId);
-                        lp.addRule(RelativeLayout.RIGHT_OF, leftNeighborId);
-                        nodeToArrange.getContents().setLayoutParams(lp);
-                    }
+                    addRightSiblings(displayOrder, displayedSiblings);
 
                     while (!displayOrder.isEmpty()) {
                         layout.removeView(displayOrder.getFirst().getContents());
                         layout.addView(displayOrder.removeFirst().getContents());
                     }
+                    Log.d(MainActivity.MAIN_TAG, "Added list of odd# siblings");
                 }
             }
-
-            viewAdded = true;
+            Log.d(MainActivity.MAIN_TAG, "View added, can pass in next view.");
+            addingView = false;
         }
 
-//        private RelativeLayout.LayoutParams calcAnchorParams(String type, DirectoryNode nodeToArrange) {
-//            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams
-//                    (RelativeLayout.LayoutParams.WRAP_CONTENT,
-//                            RelativeLayout.LayoutParams.WRAP_CONTENT);
-//
-//            lp.addRule(RelativeLayout.BELOW,
-//                    nodeToArrange.getParent().getContents().getId());
-//            switch(type) {
-//                case ODD_SIBLINGS:
-//                    lp.addRule(RelativeLayout.ALIGN_LEFT,
-//                            nodeToArrange.getParent().getContents().getId());
-//                    return lp;
-//                case EVEN_SIBLINGS_LEFT:
-//                    lp.addRule(RelativeLayout.ALIGN_RIGHT,
-//                            nodeToArrange.getParent().getContents().getId());
-//                    lp.setMargins(0, 0, (int) ((MARGIN_SIZE + DirectoryView.MAX_SIZE) / 2), 0);
-//                    return lp;
-//                case EVEN_SIBLINGS_RIGHT:
-//                    lp.addRule(RelativeLayout.ALIGN_LEFT,
-//                            nodeToArrange.getParent().getContents().getId());
-//                    lp.setMargins((int) ((MARGIN_SIZE + DirectoryView.MAX_SIZE) / 2), 0, 0, 0);
-//                    return lp;
-//                default: return null;
-//            }
-//        }
-//
-//        private void addLeftSiblings(int startPos, ) {
-//            for (int i = startPos - 1; i >= 0; i--) {
-//                nodeToArrange = displayedSiblings.remove(i);
-//                int rightNeighborId = displayOrder.getFirst().getContents().getId();
-//                displayOrder.addFirst(nodeToArrange);
-//
-//                lp = new RelativeLayout.LayoutParams
-//                        (RelativeLayout.LayoutParams.WRAP_CONTENT,
-//                                RelativeLayout.LayoutParams.WRAP_CONTENT);
-//                lp.addRule(RelativeLayout.ALIGN_TOP, rightNeighborId);
-//                lp.addRule(RelativeLayout.LEFT_OF, rightNeighborId);
-//                nodeToArrange.getContents().setLayoutParams(lp);
-//            }
-//        }
+        private RelativeLayout.LayoutParams calcAnchorParams(String type, DirectoryNode nodeToArrange) {
+            int nodeSplit = (int) ((MARGIN_SIZE + DirectoryView.MAX_SIZE) / 2);
+
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams
+                    (RelativeLayout.LayoutParams.WRAP_CONTENT,
+                            RelativeLayout.LayoutParams.WRAP_CONTENT);
+            lp.addRule(RelativeLayout.BELOW,
+                    nodeToArrange.getParent().getContents().getId());
+            switch (type) {
+                case ODD_SIBLINGS:
+                    lp.addRule(RelativeLayout.ALIGN_LEFT,
+                            nodeToArrange.getParent().getContents().getId());
+                    lp.setMargins(0, LINE_LENGTH, 0, 0);
+                    return lp;
+                case EVEN_SIBLINGS_LEFT:
+                    lp.addRule(RelativeLayout.ALIGN_RIGHT,
+                            nodeToArrange.getParent().getContents().getId());
+                    lp.setMargins(0, LINE_LENGTH, nodeSplit, 0);
+                    return lp;
+                case EVEN_SIBLINGS_RIGHT:
+                    lp.addRule(RelativeLayout.ALIGN_LEFT,
+                            nodeToArrange.getParent().getContents().getId());
+                    lp.setMargins(nodeSplit, LINE_LENGTH, 0, 0);
+                    return lp;
+                default:
+                    return null;
+            }
+        }
+
+        private void addLeftSiblings(int startPos, LinkedList<DirectoryNode> displayOrder,
+                                     List<DirectoryNode> displayedSiblings) {
+            DirectoryNode nodeToArrange;
+            RelativeLayout.LayoutParams lp;
+            int rightNeighborId;
+            for (int i = startPos; i >= 0; i--) {
+                nodeToArrange = displayedSiblings.remove(i);
+                rightNeighborId = displayOrder.getFirst().getContents().getId();
+                displayOrder.addFirst(nodeToArrange);
+                lp = new RelativeLayout.LayoutParams
+                        (RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                lp.addRule(RelativeLayout.ALIGN_BOTTOM, rightNeighborId);
+                lp.addRule(RelativeLayout.LEFT_OF, rightNeighborId);
+                lp.setMargins(0, 0, MARGIN_SIZE, CURVE_SIZE);
+                nodeToArrange.getContents().setLayoutParams(lp);
+            }
+        }
+
+        private void addRightSiblings(LinkedList<DirectoryNode> displayOrder,
+                                      List<DirectoryNode> displayedSiblings) {
+            DirectoryNode nodeToArrange;
+            RelativeLayout.LayoutParams lp;
+            int leftNeighborId;
+            while (!displayedSiblings.isEmpty()) {
+                nodeToArrange = displayedSiblings.remove(0);
+                leftNeighborId = displayOrder.getLast().getContents().getId();
+                displayOrder.addLast(nodeToArrange);
+                lp = new RelativeLayout.LayoutParams
+                        (RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                lp.addRule(RelativeLayout.ALIGN_BOTTOM, leftNeighborId);
+                lp.addRule(RelativeLayout.RIGHT_OF, leftNeighborId);
+                lp.setMargins(MARGIN_SIZE, 0, 0, CURVE_SIZE);
+                nodeToArrange.getContents().setLayoutParams(lp);
+            }
+        }
 
         public class DirectoryContainer {
             DirectoryNode node;

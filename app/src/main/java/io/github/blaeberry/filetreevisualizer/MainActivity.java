@@ -33,6 +33,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+
+    }
+
     public void startTreeGeneration(String rootPath) {
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, GenerateTreeFragment.newInstance(rootPath))
@@ -57,15 +63,17 @@ public class MainActivity extends AppCompatActivity {
             (new File(subDir1, "child1")).mkdirs();
             (new File(subDir1, "child2")).mkdirs();
             (new File(subDir1, "child3")).mkdirs();
+            (new File(subDir1, "child4")).mkdirs();
 
             (new File(parentDirectory, "SubDir2")).mkdirs();
-
-//            FileOutputStream fos = openFileOutput("text_file", Context.MODE_PRIVATE);
-//            fos.write(string.getBytes());
-//            fos.close();
 
         } catch (Exception e) {
             Log.e(MAIN_TAG, "Failed to write files.");
         }
     }
+
+    public class FocusChangeEvent {
+
+    }
 }
+
