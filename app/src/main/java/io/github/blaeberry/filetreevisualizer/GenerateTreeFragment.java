@@ -1,5 +1,6 @@
 package io.github.blaeberry.filetreevisualizer;
 
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,7 +25,7 @@ public class GenerateTreeFragment extends ScrollFragment {
     private String rootPath = "TEST NO PASS";
     private RelativeLayout layout;
     private int idNum = 3001;
-    private final int MARGIN_SIZE = 30, CURVE_SIZE = 50, LINE_LENGTH = 100;
+    private final int MARGIN_SIZE = 30, CURVE_SIZE = 50, LINE_LENGTH = 300;
 
     public static GenerateTreeFragment newInstance(String path) {
         //Log.d(MainActivity.MAIN_TAG, "PAth: " + path);
@@ -63,7 +64,6 @@ public class GenerateTreeFragment extends ScrollFragment {
 
                     }
                 });
-
         return layout;
     }
 
@@ -81,8 +81,10 @@ public class GenerateTreeFragment extends ScrollFragment {
                 Log.d(MainActivity.MAIN_TAG, "Passed path is null");
                 return null;
             }
+
             long totalSize = 0, fileSize;
             float proportion;
+
             String path = params[0];
             GodFileNodeContainer = new FileNodeContainer
                     (new File(path), new DirectoryNode(null, null), 0);
@@ -148,21 +150,38 @@ public class GenerateTreeFragment extends ScrollFragment {
             dv.setId(idNum++);
 
             DirectoryNode newNode = containers[0].node;
-            newNode.setContents(dv);
+            newNode.setDirectoryView(dv);
 
             List<DirectoryNode> siblings = new ArrayList<>();
             List<DirectoryNode> displayedSiblings = new ArrayList<>();
             displayedSiblings.add(newNode);
 
+            LineView lv = null;
+
             //TODO very inefficient, should make so that I have a map of all displayed nodes
             Boolean godNode = newNode.getParent() == null;
-            if (godNode)
+            if (godNode) {
                 Log.d(MainActivity.MAIN_TAG, "View to make is GodNode");
-            if (!godNode)
+            } else {
                 siblings = newNode.getParent().getChildren();
+                //Attach a line to this new view and its parent
+                //TODO this can still cause problems
+                lv = new LineView(getActivity(),
+                        newNode.getParent().getDirectoryView(), newNode.getDirectoryView());
+                newNode.setLine(lv);
+                Log.d("line1", "ADDING LINE");
+                RelativeLayout.LayoutParams lp =
+                        new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                lp.setMargins((int) (DirectoryView.MAX_SIZE / 2), (int) (DirectoryView.MAX_SIZE), 0, 0);
+                lv.setLayoutParams(lp);
+                layout.addView(lv);
+            }
             for (DirectoryNode sibling : siblings) {
-                if (sibling.getContents() != null) {
-                    if (sibling.getContents() != dv) {
+                if (sibling.getDirectoryView() != null) {
+                    if (sibling.getDirectoryView() != dv) {
                         displayedSiblings.add(sibling);
                     } else {
                         Log.d(MainActivity.MAIN_TAG, "found view to be added in list of children");
@@ -176,25 +195,25 @@ public class GenerateTreeFragment extends ScrollFragment {
             if (godNode) {
                 lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
                 lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                newNode.getContents().setLayoutParams(lp);
+                newNode.getDirectoryView().setLayoutParams(lp);
                 Log.d(MainActivity.MAIN_TAG, "Adding godNode to Layout.");
-                layout.addView(newNode.getContents());
+                layout.addView(newNode.getDirectoryView());
             } else {
                 int numDisplayedSiblings = displayedSiblings.size();
                 DirectoryNode nodeToArrange;
+                LinkedList<DirectoryNode> displayOrder = new LinkedList<>();
 
                 if (numDisplayedSiblings == 1) {
                     nodeToArrange = displayedSiblings.remove(0);
-                    nodeToArrange.getContents().setLayoutParams
+                    nodeToArrange.getDirectoryView().setLayoutParams
                             (calcAnchorParams(ODD_SIBLINGS, nodeToArrange));
                     Log.d(MainActivity.MAIN_TAG, "Adding single: " + containers[0].text);
-                    layout.addView(nodeToArrange.getContents());
+                    displayOrder.add(nodeToArrange);
 
                 } else if (numDisplayedSiblings % 2 == 1) {
-                    LinkedList<DirectoryNode> displayOrder = new LinkedList<>();
                     int middlePos = numDisplayedSiblings / 2;
                     nodeToArrange = displayedSiblings.remove(middlePos);
-                    nodeToArrange.getContents().setLayoutParams
+                    nodeToArrange.getDirectoryView().setLayoutParams
                             (calcAnchorParams(ODD_SIBLINGS, nodeToArrange));
                     displayOrder.add(nodeToArrange);
 
@@ -202,36 +221,32 @@ public class GenerateTreeFragment extends ScrollFragment {
 
                     addRightSiblings(displayOrder, displayedSiblings);
 
-                    //Display all siblings in correct order
-                    while (!displayOrder.isEmpty()) {
-                        layout.removeView(displayOrder.getFirst().getContents());
-                        layout.addView(displayOrder.removeFirst().getContents());
-                    }
-                    Log.d(MainActivity.MAIN_TAG, "Added list of odd# siblings");
+                    Log.d(MainActivity.MAIN_TAG, "Adding list of odd# siblings");
 
                 } else {
                     //number of sibling views (including self) is even, a little more tricky
-                    LinkedList<DirectoryNode> displayOrder = new LinkedList<>();
                     int middleLeftPos = (numDisplayedSiblings / 2) - 1;
                     nodeToArrange = displayedSiblings.remove(middleLeftPos);
-                    nodeToArrange.getContents().setLayoutParams(
+                    nodeToArrange.getDirectoryView().setLayoutParams(
                             calcAnchorParams(EVEN_SIBLINGS_LEFT, nodeToArrange));
                     displayOrder.add(nodeToArrange);
 
                     addLeftSiblings(middleLeftPos - 1, displayOrder, displayedSiblings);
 
                     nodeToArrange = displayedSiblings.remove(0);
-                    nodeToArrange.getContents().setLayoutParams(
+                    nodeToArrange.getDirectoryView().setLayoutParams(
                             calcAnchorParams(EVEN_SIBLINGS_RIGHT, nodeToArrange));
                     displayOrder.addLast(nodeToArrange);
 
                     addRightSiblings(displayOrder, displayedSiblings);
-
-                    while (!displayOrder.isEmpty()) {
-                        layout.removeView(displayOrder.getFirst().getContents());
-                        layout.addView(displayOrder.removeFirst().getContents());
-                    }
-                    Log.d(MainActivity.MAIN_TAG, "Added list of odd# siblings");
+                    Log.d(MainActivity.MAIN_TAG, "Adding list of odd# siblings");
+                }
+                //Display all siblings in correct order, first adding lines to each view
+                DirectoryNode nodeToShow;
+                while (!displayOrder.isEmpty()) {
+                    nodeToShow = displayOrder.getFirst();
+                    layout.removeView(nodeToShow.getDirectoryView());
+                    layout.addView(displayOrder.removeFirst().getDirectoryView());
                 }
             }
             Log.d(MainActivity.MAIN_TAG, "View added, can pass in next view.");
@@ -245,21 +260,21 @@ public class GenerateTreeFragment extends ScrollFragment {
                     (RelativeLayout.LayoutParams.WRAP_CONTENT,
                             RelativeLayout.LayoutParams.WRAP_CONTENT);
             lp.addRule(RelativeLayout.BELOW,
-                    nodeToArrange.getParent().getContents().getId());
+                    nodeToArrange.getParent().getDirectoryView().getId());
             switch (type) {
                 case ODD_SIBLINGS:
                     lp.addRule(RelativeLayout.ALIGN_LEFT,
-                            nodeToArrange.getParent().getContents().getId());
+                            nodeToArrange.getParent().getDirectoryView().getId());
                     lp.setMargins(0, LINE_LENGTH, 0, 0);
                     return lp;
                 case EVEN_SIBLINGS_LEFT:
                     lp.addRule(RelativeLayout.ALIGN_RIGHT,
-                            nodeToArrange.getParent().getContents().getId());
+                            nodeToArrange.getParent().getDirectoryView().getId());
                     lp.setMargins(0, LINE_LENGTH, nodeSplit, 0);
                     return lp;
                 case EVEN_SIBLINGS_RIGHT:
                     lp.addRule(RelativeLayout.ALIGN_LEFT,
-                            nodeToArrange.getParent().getContents().getId());
+                            nodeToArrange.getParent().getDirectoryView().getId());
                     lp.setMargins(nodeSplit, LINE_LENGTH, 0, 0);
                     return lp;
                 default:
@@ -274,7 +289,7 @@ public class GenerateTreeFragment extends ScrollFragment {
             int rightNeighborId;
             for (int i = startPos; i >= 0; i--) {
                 nodeToArrange = displayedSiblings.remove(i);
-                rightNeighborId = displayOrder.getFirst().getContents().getId();
+                rightNeighborId = displayOrder.getFirst().getDirectoryView().getId();
                 displayOrder.addFirst(nodeToArrange);
                 lp = new RelativeLayout.LayoutParams
                         (RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -282,7 +297,7 @@ public class GenerateTreeFragment extends ScrollFragment {
                 lp.addRule(RelativeLayout.ALIGN_BOTTOM, rightNeighborId);
                 lp.addRule(RelativeLayout.LEFT_OF, rightNeighborId);
                 lp.setMargins(0, 0, MARGIN_SIZE, CURVE_SIZE);
-                nodeToArrange.getContents().setLayoutParams(lp);
+                nodeToArrange.getDirectoryView().setLayoutParams(lp);
             }
         }
 
@@ -293,7 +308,7 @@ public class GenerateTreeFragment extends ScrollFragment {
             int leftNeighborId;
             while (!displayedSiblings.isEmpty()) {
                 nodeToArrange = displayedSiblings.remove(0);
-                leftNeighborId = displayOrder.getLast().getContents().getId();
+                leftNeighborId = displayOrder.getLast().getDirectoryView().getId();
                 displayOrder.addLast(nodeToArrange);
                 lp = new RelativeLayout.LayoutParams
                         (RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -301,7 +316,7 @@ public class GenerateTreeFragment extends ScrollFragment {
                 lp.addRule(RelativeLayout.ALIGN_BOTTOM, leftNeighborId);
                 lp.addRule(RelativeLayout.RIGHT_OF, leftNeighborId);
                 lp.setMargins(MARGIN_SIZE, 0, 0, CURVE_SIZE);
-                nodeToArrange.getContents().setLayoutParams(lp);
+                nodeToArrange.getDirectoryView().setLayoutParams(lp);
             }
         }
 

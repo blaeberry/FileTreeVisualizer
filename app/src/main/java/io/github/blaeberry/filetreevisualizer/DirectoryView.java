@@ -8,7 +8,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
 import android.util.Log;
-import android.view.View;import java.lang.Override;import java.lang.String;import java.lang.StringBuilder;
+import android.view.View;
+
+import java.lang.Override;
+import java.lang.String;
+import java.lang.StringBuilder;
 
 /**
  * Created by Evan on 1/19/2016.
@@ -27,24 +31,17 @@ public class DirectoryView extends View {
     private Paint textPaint;
     public static final String CVIEW_TAG = "cview";
     private String text;
-//    private DirectoryNode wrapperNode;
 
     public DirectoryView(Context context) {
         super(context);
         initializeView();
     }
 
-//    public DirectoryView(Context context, DirectoryNode wrapperNode) {
-//        super(context);
-//        initializeView();
-//        this.wrapperNode = wrapperNode;
-//    }
-
     //TODO potential bugs for 2 reasons (1) if not attached to layout (2) if not called before viewBounds
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        Log.d(CVIEW_TAG, "size changed!");
+        Log.d(CVIEW_TAG, text + " size changed!");
         int[] tempCoords = new int[2];
         getLocationOnScreen(tempCoords);
         viewBounds.left = tempCoords[0];
@@ -88,10 +85,18 @@ public class DirectoryView extends View {
 
     private void determineColor() {
         switch (row % 4) {
-            case 0: drawable.getPaint().setColor(0xffff5722); break;
-            case 1: drawable.getPaint().setColor(0xff2196f3); break;
-            case 2: drawable.getPaint().setColor(0xff4caf50); break;
-            case 3: drawable.getPaint().setColor(0xfffdd835); break;
+            case 0:
+                drawable.getPaint().setColor(0xffff5722);
+                break;
+            case 1:
+                drawable.getPaint().setColor(0xff2196f3);
+                break;
+            case 2:
+                drawable.getPaint().setColor(0xff4caf50);
+                break;
+            case 3:
+                drawable.getPaint().setColor(0xfffdd835);
+                break;
         }
     }
 
@@ -150,14 +155,6 @@ public class DirectoryView extends View {
         invalidate();
     }
 
-//    public DirectoryNode getWrapperNode() {
-//        return wrapperNode;
-//    }
-//
-//    public void setWrapperNode(DirectoryNode wrapperNode) {
-//        this.wrapperNode = wrapperNode;
-//    }
-
     public float getProportion() {
         return proportion;
     }
@@ -172,11 +169,5 @@ public class DirectoryView extends View {
 
     public Rect getViewBounds() {
         return viewBounds;
-    }
-
-    public DirectoryNode getWrapperNode(DirectoryNode wrapperNode) {
-        if(wrapperNode == null)
-            Log.d(MainActivity.MAIN_TAG, "Wrapper node is null!");
-        return wrapperNode;
     }
 }

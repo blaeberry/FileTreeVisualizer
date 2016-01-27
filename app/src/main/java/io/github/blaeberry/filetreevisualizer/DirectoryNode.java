@@ -1,5 +1,8 @@
 package io.github.blaeberry.filetreevisualizer;
 
+import android.graphics.Rect;
+import android.view.View;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,19 +13,22 @@ import java.util.List;
 //Not sure if nodes should be unidirectional or not yet...
 public class DirectoryNode {
     private DirectoryNode parent;
-    private DirectoryView contents;
+    private DirectoryView directoryView;
+    private LineView line;
     private List<DirectoryNode> children;
     private long totalStorage;
 
-    public DirectoryNode(DirectoryNode parent, DirectoryView contents, List<DirectoryNode> children) {
+    public DirectoryNode(DirectoryNode parent, DirectoryView directoryView,
+                         List<DirectoryNode> children) {
         this.parent = parent;
-        this.contents = contents;
+        this.directoryView = directoryView;
         this.children = children;
+
     }
 
-    public DirectoryNode(DirectoryNode parent, DirectoryView contents) {
+    public DirectoryNode(DirectoryNode parent, DirectoryView directoryView) {
         this.parent = parent;
-        this.contents = contents;
+        this.directoryView = directoryView;
         this.children = new ArrayList<>();
     }
 
@@ -44,8 +50,8 @@ public class DirectoryNode {
         children.clear();
     }
 
-    public void setContents(DirectoryView contents) {
-        this.contents = contents;
+    public void setDirectoryView(DirectoryView directoryView) {
+        this.directoryView = directoryView;
     }
 
     public void setChildren(List<DirectoryNode> children) {
@@ -56,12 +62,16 @@ public class DirectoryNode {
         this.totalStorage = totalStorage;
     }
 
+    public void setLine(LineView line) {
+        this.line = line;
+    }
+
     public DirectoryNode getParent() {
         return parent;
     }
 
-    public DirectoryView getContents() {
-        return contents;
+    public DirectoryView getDirectoryView() {
+        return directoryView;
     }
 
     public int getNumChildren() {
@@ -74,6 +84,10 @@ public class DirectoryNode {
 
     public List<DirectoryNode> getChildren() {
         return children;
+    }
+
+    public LineView getLine() {
+        return line;
     }
 
     public long getTotalStorage() {
