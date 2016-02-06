@@ -3,11 +3,19 @@ package io.github.blaeberry.filetreevisualizer;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.AnimationSet;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.RelativeLayout;
 
 import java.io.File;
@@ -19,12 +27,15 @@ import java.util.Queue;
 /**
  * Created by Evan on 1/22/2016.
  */
+
+//TODO switch to android.animation for less lag
+//TODO BIGGEST TODO: go thru steps for generation then make into thread class
 public class GenerateTreeFragment extends ScrollFragment {
     public static final String PATH_KEY = "original_path", ODD_SIBLINGS = "odd",
             EVEN_SIBLINGS_LEFT = "evenL", EVEN_SIBLINGS_RIGHT = "evenR";
     private String rootPath = "TEST NO PASS";
     private RelativeLayout layout;
-    private int idNum = 3001;
+    private int idNum = 3001, offset = 0;
     private final int MARGIN_SIZE = 30, CURVE_SIZE = 50, LINE_LENGTH = 300;
 
     public static GenerateTreeFragment newInstance(String path) {
@@ -48,7 +59,7 @@ public class GenerateTreeFragment extends ScrollFragment {
     public View onCreateView
             (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         layout = (RelativeLayout) inflater.inflate(R.layout.generate_tree, container, false);
-        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(3000, 3000);
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(3000, 6000);
         layout.setLayoutParams(lp);
 
         layout.getViewTreeObserver().addOnGlobalLayoutListener(
@@ -151,6 +162,7 @@ public class GenerateTreeFragment extends ScrollFragment {
 
             DirectoryNode newNode = containers[0].node;
             newNode.setDirectoryView(dv);
+            dv.wrapperNode = newNode;
 
             List<DirectoryNode> siblings = new ArrayList<>();
             List<DirectoryNode> displayedSiblings = new ArrayList<>();
@@ -165,19 +177,9 @@ public class GenerateTreeFragment extends ScrollFragment {
             } else {
                 siblings = newNode.getParent().getChildren();
                 //Attach a line to this new view and its parent
-                //TODO this can still cause problems
                 lv = new LineView(getActivity(),
                         newNode.getParent().getDirectoryView(), newNode.getDirectoryView());
                 newNode.setLine(lv);
-                Log.d("line1", "ADDING LINE");
-                RelativeLayout.LayoutParams lp =
-                        new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,
-                        RelativeLayout.LayoutParams.WRAP_CONTENT);
-                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                lp.setMargins((int) (DirectoryView.MAX_SIZE / 2), (int) (DirectoryView.MAX_SIZE), 0, 0);
-                lv.setLayoutParams(lp);
-                layout.addView(lv);
             }
             for (DirectoryNode sibling : siblings) {
                 if (sibling.getDirectoryView() != null) {
@@ -244,10 +246,20 @@ public class GenerateTreeFragment extends ScrollFragment {
                 //Display all siblings in correct order, first adding lines to each view
                 DirectoryNode nodeToShow;
                 while (!displayOrder.isEmpty()) {
-                    nodeToShow = displayOrder.getFirst();
-                    layout.removeView(nodeToShow.getDirectoryView());
-                    layout.addView(displayOrder.removeFirst().getDirectoryView());
+                    nodeToShow = displayOrder.removeFirst();
+                    addViewToAnime(layout, nodeToShow, offset);
+                    offset += 500;
+                    Log.d(MainActivity.MAIN_TAG, nodeToShow.getDirectoryView().getText() +
+                            " listening for layout change");
                 }
+                Log.d("line1", "ADDING LINE");
+                lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                lv.setLayoutParams(lp);
+                lv.setVisibility(View.INVISIBLE);
+                layout.addView(lv, 0);
             }
             Log.d(MainActivity.MAIN_TAG, "View added, can pass in next view.");
             addingView = false;
@@ -318,6 +330,44 @@ public class GenerateTreeFragment extends ScrollFragment {
                 lp.setMargins(MARGIN_SIZE, 0, 0, CURVE_SIZE);
                 nodeToArrange.getDirectoryView().setLayoutParams(lp);
             }
+        }
+
+        private void addViewToAnime(RelativeLayout layout, DirectoryNode node, final int offset) {
+            final String text = node.getDirectoryView().getText();
+            DirectoryView directoryView = node.getDirectoryView();
+            final DirectoryView parent = node.getParent().getDirectoryView();
+            layout.removeView(directoryView);
+            directoryView.setVisibility(View.INVISIBLE);
+            layout.addView(directoryView);
+            directoryView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override
+                public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    Log.d(MainActivity.MAIN_TAG, text + " layout changed, parentX: " + parent.getX()
+                            + "| parentY: " + parent.getY() + "|parent name: " + parent.getText());
+                    v.removeOnLayoutChangeListener(this);
+                    AnimationSet budAnime = new AnimationSet(false);
+                    ScaleAnimation scaleAnime = new ScaleAnimation(0, 1, 0, 1,
+                            parent.getX(), parent.getY());
+                    scaleAnime.setDuration(500);
+                    scaleAnime.setInterpolator(new DecelerateInterpolator());
+                    TranslateAnimation translateAnimation = new TranslateAnimation(parent.getX() -
+                            v.getX(), 0, parent.getY() - v.getY(), 0);
+                    translateAnimation.setDuration(500);
+                    translateAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
+                    AlphaAnimation alphaAnime = new AlphaAnimation(0, 1);
+                    alphaAnime.setDuration(500);
+                    alphaAnime.setInterpolator(new LinearInterpolator());
+                    budAnime.addAnimation(scaleAnime);
+                    budAnime.addAnimation(translateAnimation);
+                    budAnime.addAnimation(alphaAnime);
+                    budAnime.setStartOffset(offset);
+                    v.setVisibility(View.VISIBLE);
+                    v.startAnimation(budAnime);
+                    ((DirectoryView)v).wrapperNode.getLine().setVisibility(View.VISIBLE);
+                    ((DirectoryView)v).wrapperNode.getLine().startAnimation(budAnime);
+                }
+            });
         }
 
         public class DirectoryContainer {

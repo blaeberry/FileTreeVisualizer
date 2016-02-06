@@ -57,8 +57,8 @@ public class ScrollFragment extends Fragment {
         @Override
         public boolean onFling(MotionEvent event1, MotionEvent event2,
                                float velocityX, float velocityY) {
-            Log.d(SCROLL_TAG, "onFling: " + event1.toString() + event2.toString() + '\n' + "**"
-                    + velocityX + "***" + velocityY);
+//            Log.d(SCROLL_TAG, "onFling: " + event1.toString() + event2.toString() + '\n' + "**"
+//                    + velocityX + "***" + velocityY);
 
             scroller.fling(layout.getScrollX(), layout.getScrollY(),
                     (int)-velocityX, (int)-velocityY,
@@ -92,8 +92,8 @@ public class ScrollFragment extends Fragment {
                 int currX = sc.getCurrX(), currY = sc.getCurrY();
                 sc.computeScrollOffset();
                 layout.scrollTo(currX, currY);
-                Log.d(SCROLL_TAG, "scrollX: " + layout.getScrollX() + "| scrollY: " +
-                        layout.getScrollY() /* '\n' + "| currX: " + currX + "| currY: " + currY*/);
+                //Log.d(SCROLL_TAG, "scrollX: " + layout.getScrollX() + "| scrollY: " +
+//                        layout.getScrollY() /* '\n' + "| currX: " + currX + "| currY: " + currY*/);
                 try {
                     Thread.sleep(SCROLL_REFRESH_RATE);
                 } catch (InterruptedException e) {
@@ -103,7 +103,7 @@ public class ScrollFragment extends Fragment {
             sc.springBack(layout.getScrollX(), layout.getScrollY(),
                     (int)leftBound, (int)rightBound,
                     (int)topBound, (int)bottomBound);
-            Log.d(SCROLL_TAG, leftBound + "*R* " + rightBound + "*T* " + topBound + "*B* " + bottomBound);
+            //Log.d(SCROLL_TAG, leftBound + "*R* " + rightBound + "*T* " + topBound + "*B* " + bottomBound);
         }
     }
 

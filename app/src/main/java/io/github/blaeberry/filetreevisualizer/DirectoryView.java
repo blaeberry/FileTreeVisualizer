@@ -27,28 +27,30 @@ public class DirectoryView extends View {
     public static final float TEXT_SIZE = 40, MAX_SIZE = 300;
     private float proportion;
     private int row, size;
-    private Rect viewBounds;
+//    private Rect viewBounds;
     private Paint textPaint;
     public static final String CVIEW_TAG = "cview";
     private String text;
+    public DirectoryNode wrapperNode;
+
 
     public DirectoryView(Context context) {
         super(context);
         initializeView();
     }
 
-    //TODO potential bugs for 2 reasons (1) if not attached to layout (2) if not called before viewBounds
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        Log.d(CVIEW_TAG, text + " size changed!");
-        int[] tempCoords = new int[2];
-        getLocationOnScreen(tempCoords);
-        viewBounds.left = tempCoords[0];
-        viewBounds.top = tempCoords[1];
-        viewBounds.right = viewBounds.left + size;
-        viewBounds.bottom = viewBounds.top + size;
-    }
+//    //TODO potential bugs for 2 reasons (1) if not attached to layout (2) if not called before viewBounds
+//    @Override
+//    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+//        super.onSizeChanged(w, h, oldw, oldh);
+//        Log.d(CVIEW_TAG, text + " size changed!");
+//        int[] tempCoords = new int[2];
+//        getLocationOnScreen(tempCoords);
+//        viewBounds.left = tempCoords[0];
+//        viewBounds.top = tempCoords[1];
+//        viewBounds.right = viewBounds.left + size;
+//        viewBounds.bottom = viewBounds.top + size;
+//    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -60,8 +62,8 @@ public class DirectoryView extends View {
         determineBounds();
         determineColor();
         drawable.draw(canvas);
-        Log.d(CVIEW_TAG, "x: " + viewBounds.exactCenterX() + "| y: " + viewBounds.exactCenterY()
-                + "| size/2: " + (size / 2));
+//        Log.d(CVIEW_TAG, "x: " + viewBounds.exactCenterX() + "| y: " + viewBounds.exactCenterY()
+//                + "| size/2: " + (size / 2));
         String displayedText = calculateDisplayedText(text, textPaint);
         canvas.drawText(displayedText, size / 2, size / 2, textPaint);
     }
@@ -76,7 +78,7 @@ public class DirectoryView extends View {
         textPaint.setTextSize(TEXT_SIZE);
         textPaint.setStyle(Paint.Style.FILL);
         text = "default_text";
-        viewBounds = new Rect();
+//        viewBounds = new Rect();
     }
 
     private void determineBounds() {
@@ -105,12 +107,12 @@ public class DirectoryView extends View {
             Log.e(CVIEW_TAG, "Paint is undefined!");
             return null;
         }
-        if (viewBounds == null) {
-            Log.e(CVIEW_TAG, "viewBounds is undefined!");
+        if (this.getWidth() == 0) {
+            Log.e(CVIEW_TAG, "View width is 0!");
             return null;
         }
 
-        float limit = viewBounds.width();
+        float limit = this.getWidth();
         if (limit <= 0) {
             Log.e(CVIEW_TAG, "Unexpected viewBounds width!");
             return null;
@@ -167,7 +169,7 @@ public class DirectoryView extends View {
         return text;
     }
 
-    public Rect getViewBounds() {
-        return viewBounds;
-    }
+//    public Rect getViewBounds() {
+//        return viewBounds;
+//    }
 }

@@ -41,14 +41,12 @@ public class FileFinderFragment extends Fragment implements View.OnClickListener
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.finder_button:
-                String s = getActivity().getFilesDir().getPath();
-                ((MainActivity)getActivity()).startTreeGeneration(s);
-//                Environment.getExternalStorageDirectory().mkdirs();
-//                Intent filePickerIntent = new Intent(getActivity(), FilePickerActivity.class);
-//                //filePickerIntent.putExtra(FilePickerActivity.THEME_TYPE, ThemeType.DIALOG);
-//                filePickerIntent.putExtra(FilePickerActivity.REQUEST_CODE,
-//                        FilePickerActivity.REQUEST_DIRECTORY);
-//                startActivityForResult(filePickerIntent, FilePickerActivity.REQUEST_DIRECTORY);
+                Environment.getExternalStorageDirectory().mkdirs();
+                Intent filePickerIntent = new Intent(getActivity(), FilePickerActivity.class);
+                //filePickerIntent.putExtra(FilePickerActivity.THEME_TYPE, ThemeType.DIALOG);
+                filePickerIntent.putExtra(FilePickerActivity.REQUEST_CODE,
+                        FilePickerActivity.REQUEST_DIRECTORY);
+                startActivityForResult(filePickerIntent, FilePickerActivity.REQUEST_DIRECTORY);
                 break;
             default:
                 Log.e(MainActivity.MAIN_TAG, "Shouldn't be here. (onClick in FFFrag");

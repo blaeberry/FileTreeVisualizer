@@ -2,18 +2,17 @@ package io.github.blaeberry.filetreevisualizer;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewTreeObserver;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 
 /**
  * Created by Evan on 1/26/2016.
  */
 //TODO lines should be held by children nodes so they are updated when
 public class LineView extends View {
-    private int startX, startY, stopX, stopY;
     private int childLeft, childTop, parentLeft, parentTop;
     private static final float STROKE_WIDTH = 8.f;
     private Paint paint;
@@ -31,9 +30,15 @@ public class LineView extends View {
         paint.setStrokeWidth(STROKE_WIDTH);
         paint.setColor(0xffbdbdbd);
 
-        startX = startY = stopX = stopY = childLeft = childTop = parentLeft = parentTop = 0;
-
+        initialViewPositions();
         setupViewsListener();
+    }
+
+    private void initialViewPositions() {
+        parentLeft = parentView.getLeft();
+        parentTop = parentView.getTop();
+        childLeft = childView.getLeft();
+        childTop = childView.getTop();
     }
 
     private void setupViewsListener() {
@@ -44,15 +49,14 @@ public class LineView extends View {
                 if(left == oldLeft && top == oldTop && right == oldRight && bottom == oldBottom)
                     return;
                 if(v == childView) {
-                    childLeft = left; childTop = top;
+                    childLeft = left;
+                    childTop = top;
                 } else if (v == parentView) {
-                    parentLeft = left; parentTop = top;
+                    parentLeft = left;
+                    parentTop = top;
                 } else
                     Log.wtf("Line", "NOT EITHER WAT???");
-                startX = parentLeft;
-                startY = parentTop;
-                stopX = childLeft;
-                stopY = childTop - ((int)DirectoryView.MAX_SIZE);
+                //stopY = childTop - ((int)DirectoryView.MAX_SIZE);
                 LineView.this.requestLayout();
                 LineView.this.invalidate();
                 Log.d("line", ((DirectoryView)v).getText() + " changed! " + left + " " + top + " "
@@ -63,16 +67,12 @@ public class LineView extends View {
         childView.addOnLayoutChangeListener(listener);
     }
 
-//    @Override
-//    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-//        setMeasuredDimension(Math.abs(startX - stopX), Math.abs(startY - stopY));
-//    }
-
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawLine(startX, startY, stopX, stopY, paint);
-        Log.d("line", "DRAWING" + startX + " " + stopX + " "
-                + startY + " " + stopY);
+        canvas.drawLine(parentLeft + parentView.getWidth()/2, parentTop + parentView.getHeight(),
+                childLeft + childView.getWidth()/2, childTop, paint);
+        Log.d("line", "DRAWING" + parentLeft + " " + parentTop + " "
+                + childLeft + " " + childTop);
 
     }
 
