@@ -16,7 +16,7 @@ import android.widget.RelativeLayout;
 //TODO switch to android.animation for less lag
 public class GenerateTreeFragment extends ScrollFragment {
     public static final String ORIGINAL_PATH_KEY = "original_path";
-    private String rootPath = "TEST NO PASS";
+    private String rootPath = "TEST, NO PATH";
     private RelativeLayout layout;
     private DisplayNodeHandler handler;
     private ProcessQueue processQueue;

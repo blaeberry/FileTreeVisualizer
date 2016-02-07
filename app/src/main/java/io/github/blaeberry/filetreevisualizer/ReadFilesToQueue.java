@@ -8,6 +8,7 @@ import java.util.Queue;
 
 /**
  * Created by Evan on 2/6/2016.
+ * Reads through selected directory and sends the files to the ProcessQueue, breadth-first.
  */
 public class ReadFilesToQueue extends Thread {
     String rootPath;

@@ -10,6 +10,7 @@ import android.widget.RelativeLayout;
 
 /**
  * Created by Evan on 1/26/2016.
+ * This is the line that connects DirectoryViews/nodes. Updates self when either view moves.
  */
 //TODO lines should be held by children nodes so they are updated when
 public class LineView extends View {
@@ -41,6 +42,7 @@ public class LineView extends View {
         childTop = childView.getTop();
     }
 
+    //Automatically updates self when either view it's connected to change location
     private void setupViewsListener() {
         OnLayoutChangeListener listener = new OnLayoutChangeListener() {
             @Override

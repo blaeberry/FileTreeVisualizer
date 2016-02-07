@@ -12,6 +12,7 @@ import android.widget.RelativeLayout;
 
 /**
  * Created by Evan on 1/26/2016.
+ * Very basic implementation of scroll on a fragment.
  */
 public class ScrollFragment extends Fragment {
 

@@ -8,6 +8,8 @@ import java.util.List;
 
 /**
  * Created by Evan on 1/22/2016.
+ * Points to the parent directory, and any children directories,
+ * while wrapping LineViews and DirectoryViews. totalStorage is a stub for future implementations.
  */
 
 //Not sure if nodes should be unidirectional or not yet...

@@ -4,6 +4,8 @@ import java.io.File;
 
 /**
  * Created by Evan on 2/6/2016.
+ * I'm not sure if this is still used after refactoring. Just packages stuff for passing
+ * between methods.
  */
 public class FileNodeContainer {
     private File file;

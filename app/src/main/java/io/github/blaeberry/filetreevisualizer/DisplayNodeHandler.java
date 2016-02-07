@@ -21,6 +21,9 @@ import java.util.List;
 
 /**
  * Created by Evan on 2/6/2016.
+ * Does two operations:
+ *  1) packages views inside of the nodes from ProcessQueue, and positions them in the RelativeLayout
+ *  2) Animates the views going from their parent directory to their calculated position
  */
 public class DisplayNodeHandler extends Handler {
     private final int MARGIN_SIZE = 30, CURVE_SIZE = 50, LINE_LENGTH = 300;

@@ -2,12 +2,13 @@ package io.github.blaeberry.filetreevisualizer;
 
 import android.os.Message;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
 /**
  * Created by Evan on 2/6/2016.
+ * Holds all the nodes that will be converted into views displayed on the screen, making sure
+ * operations between threads are not occurring at the same time.
  */
 public class ProcessQueue {
     private Queue<FileNodeContainer> viewsToBeProcessed = new LinkedList<>();

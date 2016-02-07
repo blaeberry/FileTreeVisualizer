@@ -16,10 +16,7 @@ import java.lang.StringBuilder;
 
 /**
  * Created by Evan on 1/19/2016.
- */
-
-/**
- * should probably throw in some Log.d() to figure out the life cycle...
+ * This is the bubble looking view that has the text the directory it is associated with.
  */
 public class DirectoryView extends View {
 
@@ -38,19 +35,6 @@ public class DirectoryView extends View {
         super(context);
         initializeView();
     }
-
-//    //TODO potential bugs for 2 reasons (1) if not attached to layout (2) if not called before viewBounds
-//    @Override
-//    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-//        super.onSizeChanged(w, h, oldw, oldh);
-//        Log.d(CVIEW_TAG, text + " size changed!");
-//        int[] tempCoords = new int[2];
-//        getLocationOnScreen(tempCoords);
-//        viewBounds.left = tempCoords[0];
-//        viewBounds.top = tempCoords[1];
-//        viewBounds.right = viewBounds.left + size;
-//        viewBounds.bottom = viewBounds.top + size;
-//    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
